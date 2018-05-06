@@ -33,6 +33,7 @@ import org.eclipse.jgit.storage.file.WindowCacheConfig;
 import to.rtc.cli.migrate.ChangeSet;
 import to.rtc.cli.migrate.ChangeSet.WorkItem;
 import to.rtc.cli.migrate.Migrator;
+import to.rtc.cli.migrate.StreamOutput;
 import to.rtc.cli.migrate.Tag;
 import to.rtc.cli.migrate.util.CommitCommentTranslator;
 import to.rtc.cli.migrate.util.Files;
@@ -55,19 +56,31 @@ public final class GitMigrator implements Migrator {
 	private final Set<String> ignoredFileExtensions;
 	private final WindowCacheConfig WindowCacheConfig;
 
+	private StreamOutput output;
+
 	private int commitsAfterClean;
 	private Git git;
 	private Properties properties;
 	private PersonIdent defaultIdent;
 	private File rootDir;
 	private CommitCommentTranslator commentTranslator;
+	private boolean translateIgnores;
 
-	public GitMigrator(Properties properties) {
+	public GitMigrator(StreamOutput output, Properties properties) {
+		this.output = output;
 		defaultCharset = Charset.forName("UTF-8");
 		ignoredFileExtensions = new HashSet<String>();
 		WindowCacheConfig = new WindowCacheConfig();
 		commitsAfterClean = 0;
+		translateIgnores = true;
 		initialize(properties);
+	}
+
+	private void writeOutput(String line) {
+		if (output == null)
+			return;
+
+		output.writeLine(line);
 	}
 
 	private Charset getCharset() {
@@ -248,6 +261,9 @@ public final class GitMigrator implements Migrator {
 			}
 
 			++commitsAfterClean;
+		} catch (org.eclipse.jgit.api.errors.AbortedByHookException e) {
+			// We don't want the pre-commit hook failure to stop the process. But no commit is created.
+			writeOutput("[WARN] Commit was aborted by the hook. Continuing... e.mesage=" + e.getMessage());
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -304,28 +320,35 @@ public final class GitMigrator implements Migrator {
 	}
 
 	private void handleJazzignores(Set<String> relativeFileNames) {
-		try {
-			Set<String> additionalNames = new HashSet<String>();
-			for (String relativeFileName : relativeFileNames) {
-				Matcher matcher = JAZZIGNORE_PATTERN.matcher(relativeFileName);
-				if (matcher.matches()) {
-					File jazzIgnore = new File(rootDir, relativeFileName);
-					String gitignoreFile = matcher.group(1).concat(".gitignore");
-					if (jazzIgnore.exists()) {
-						// change/add case
-						List<String> ignoreContent = JazzignoreTranslator.toGitignore(jazzIgnore);
-						Files.writeLines(new File(rootDir, gitignoreFile), ignoreContent, getCharset(), false);
-					} else {
-						// delete case
-						new File(rootDir, gitignoreFile).delete();
+		// Don't want to convert jazzignores to gitignores.
+		// If the file was added to the repo before the entry was added to jazzignore, it would inadvertently be
+		// ignored.
+		if (translateIgnores) {
+			try {
+				Set<String> additionalNames = new HashSet<String>();
+				for (String relativeFileName : relativeFileNames) {
+					Matcher matcher = JAZZIGNORE_PATTERN.matcher(relativeFileName);
+					if (matcher.matches()) {
+						File jazzIgnore = new File(rootDir, relativeFileName);
+						String gitignoreFile = matcher.group(1).concat(".gitignore");
+						if (jazzIgnore.exists()) {
+							// change/add case
+							List<String> ignoreContent = JazzignoreTranslator.toGitignore(jazzIgnore);
+							Files.writeLines(new File(rootDir, gitignoreFile), ignoreContent, getCharset(), false);
+						} else {
+							// delete case
+							new File(rootDir, gitignoreFile).delete();
+						}
+						additionalNames.add(gitignoreFile);
 					}
-					additionalNames.add(gitignoreFile);
 				}
+				// add additional modified name
+				relativeFileNames.addAll(additionalNames);
+			} catch (IOException e) {
+				throw new RuntimeException("Unable to handle .jazzignore", e);
 			}
-			// add additional modified name
-			relativeFileNames.addAll(additionalNames);
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to handle .jazzignore", e);
+		} else {
+			writeOutput("[INFO] .jazzignore file will not be converted to .gitignore per configuration");
 		}
 	}
 
@@ -389,6 +412,7 @@ public final class GitMigrator implements Migrator {
 		commentTranslator = new CommitCommentTranslator(props);
 		defaultIdent = new PersonIdent(props.getProperty("user.name", "RTC 2 git"),
 				props.getProperty("user.email", "rtc2git@rtc.to"));
+		translateIgnores = props.getProperty("translate.ignores", "true").equals("true") ? true : false;
 		parseElements(props.getProperty("ignore.file.extensions", ""), ignoredFileExtensions);
 		// update window cache config
 		WindowCacheConfig cfg = getWindowCacheConfig();

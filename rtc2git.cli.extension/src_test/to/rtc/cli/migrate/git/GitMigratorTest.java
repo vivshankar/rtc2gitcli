@@ -2,7 +2,10 @@ package to.rtc.cli.migrate.git;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +57,7 @@ public class GitMigratorTest {
 	public void setUo() {
 		cs = Charset.forName("UTF-8");
 		props = new Properties();
-		migrator = new GitMigrator(props);
+		migrator = new GitMigrator(null, props);
 		basedir = tempFolder.getRoot();
 	}
 

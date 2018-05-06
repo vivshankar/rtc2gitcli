@@ -6,11 +6,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import to.rtc.cli.migrate.MigrateTo;
-import to.rtc.cli.migrate.Migrator;
-
 import com.ibm.team.filesystem.client.FileSystemException;
 import com.ibm.team.rtc.cli.infrastructure.internal.parser.ICommandLine;
+
+import to.rtc.cli.migrate.MigrateTo;
+import to.rtc.cli.migrate.Migrator;
 
 public class MigrateToGit extends MigrateTo {
 	private Migrator migratorImplementation;
@@ -20,7 +20,7 @@ public class MigrateToGit extends MigrateTo {
 	public void run() throws FileSystemException {
 		Properties migrationProperties = readProperties(config.getSubcommandCommandLine());
 		baselineIncludeRegexPattern = Pattern.compile(migrationProperties.getProperty("rtc.baseline.include", ""));
-		migratorImplementation = new GitMigrator(migrationProperties);
+		migratorImplementation = new GitMigrator(output, migrationProperties);
 		try {
 			super.run();
 		} finally {

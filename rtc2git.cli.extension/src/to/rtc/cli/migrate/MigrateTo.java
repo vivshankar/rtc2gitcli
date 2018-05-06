@@ -56,7 +56,7 @@ import com.ibm.team.scm.common.IWorkspaceHandle;
 @SuppressWarnings("restriction")
 public abstract class MigrateTo extends AbstractSubcommand implements ISubcommand {
 
-	private StreamOutput output;
+	protected StreamOutput output;
 	private boolean listTagsOnly = false;
 
 	private IProgressMonitor getMonitor() {
@@ -95,11 +95,11 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 				output.writeLine("***** IS UPDATE MIGRATION *****");
 			}
 
-			final ScmCommandLineArgument sourceWsOption = ScmCommandLineArgument.create(
-					subargs.getOptionValue(MigrateToOptions.OPT_SRC_WS), config);
+			final ScmCommandLineArgument sourceWsOption = ScmCommandLineArgument
+					.create(subargs.getOptionValue(MigrateToOptions.OPT_SRC_WS), config);
 			SubcommandUtil.validateArgument(sourceWsOption, ItemType.WORKSPACE);
-			final ScmCommandLineArgument destinationWsOption = ScmCommandLineArgument.create(
-					subargs.getOptionValue(MigrateToOptions.OPT_DEST_WS), config);
+			final ScmCommandLineArgument destinationWsOption = ScmCommandLineArgument
+					.create(subargs.getOptionValue(MigrateToOptions.OPT_DEST_WS), config);
 			SubcommandUtil.validateArgument(destinationWsOption, ItemType.WORKSPACE);
 
 			// Initialize connection to RTC
@@ -227,8 +227,8 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 			IWorkspace sourceWs) {
 		RtcTagList tagList = new RtcTagList(output);
 		try {
-			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo).getWorkspaceConnection(
-					sourceWs, getMonitor());
+			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo)
+					.getWorkspaceConnection(sourceWs, getMonitor());
 
 			IWorkspaceHandle sourceStreamHandle = (IWorkspaceHandle) (sourceWsConnection.getFlowTable()
 					.getCurrentAcceptFlow().getFlowNode());
@@ -245,12 +245,22 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 			for (IComponentHandle component : componentHandles) {
 				parms.componentItemId = component.getItemId().getUuidValue();
 				result = client.getBaselines(parms, getMonitor());
+				if (result == null) {
+					output.writeLine("No component baselines found");
+					continue;
+				}
+
 				for (Object obj : result.getBaselineHistoryEntriesInWorkspace()) {
 					BaselineHistoryEntryDTO baselineEntry = (BaselineHistoryEntryDTO) obj;
 					BaselineDTO baseline = baselineEntry.getBaseline();
+					if (baseline == null) {
+						output.writeLine("No baseline object found");
+						continue;
+					}
+
 					long creationDate = baseline.getCreationDate();
-					RtcTag tag = new RtcTag(baseline.getItemId()).setCreationDate(creationDate).setOriginalName(
-							baseline.getName());
+					RtcTag tag = new RtcTag(baseline.getItemId()).setCreationDate(creationDate)
+							.setOriginalName(baseline.getName());
 					tag = tagList.add(tag);
 				}
 			}
@@ -267,8 +277,8 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 
 		SnapshotSyncReport syncReport;
 		try {
-			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo).getWorkspaceConnection(
-					sourceWs, getMonitor());
+			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo)
+					.getWorkspaceConnection(sourceWs, getMonitor());
 
 			IWorkspaceHandle sourceStreamHandle = (IWorkspaceHandle) (sourceWsConnection.getFlowTable()
 					.getCurrentAcceptFlow().getFlowNode());
