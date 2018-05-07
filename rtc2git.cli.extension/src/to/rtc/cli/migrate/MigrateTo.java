@@ -95,6 +95,12 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 				output.writeLine("***** IS UPDATE MIGRATION *****");
 			}
 
+			String loadArgs = "";
+			if (subargs.hasOption(MigrateToOptions.OPT_RTC_LOAD_ARGS)) {
+				loadArgs = subargs.getOptionValue(MigrateToOptions.OPT_RTC_LOAD_ARGS).getValue();
+				output.writeLine("***** Using additional arguments for sandbox load: " + loadArgs + "*****");
+			}
+
 			final ScmCommandLineArgument sourceWsOption = ScmCommandLineArgument
 					.create(subargs.getOptionValue(MigrateToOptions.OPT_SRC_WS), config);
 			SubcommandUtil.validateArgument(sourceWsOption, ItemType.WORKSPACE);
@@ -151,7 +157,7 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 					client, config);
 
 			RtcMigrator rtcMigrator = new RtcMigrator(output, config, destinationWsOption.getStringValue(), migrator,
-					sandboxDirectory, destinationWsComponents.values(), isUpdateMigration);
+					sandboxDirectory, destinationWsComponents.values(), isUpdateMigration, loadArgs);
 			boolean isFirstTag = true;
 			int numberOfTags = tagList.size();
 			int tagCounter = 0;

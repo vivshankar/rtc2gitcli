@@ -33,6 +33,9 @@ public abstract class RtcCommandDelegate {
 		AbstractSubcommand command = getCommand();
 		try {
 			return command.run(config);
+		} catch (CLIClientException e) {
+			output.writeLine("DelegateCommand [" + this + "] threw an error: " + e.getMessage());
+			throw e;
 		} finally {
 			output.writeLine(
 					"DelegateCommand [" + this + "] finished in [" + (System.currentTimeMillis() - start) + "]ms");

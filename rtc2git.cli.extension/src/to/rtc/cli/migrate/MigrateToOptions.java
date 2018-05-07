@@ -17,6 +17,7 @@ public class MigrateToOptions implements IOptionSource {
 	public static final IOptionKey OPT_RTC_CONNECTION_TIMEOUT = new OptionKey("timeout");
 	public static final IOptionKey OPT_RTC_LIST_TAGS_ONLY = new OptionKey("listTagsOnly");
 	public static final IOptionKey OPT_RTC_IS_UPDATE_MIGRATION = new OptionKey("updateMigration");
+	public static final IOptionKey OPT_RTC_LOAD_ARGS = new OptionKey("loadArgs");
 
 	@Override
 	public Options getOptions() throws ConflictingOptionException {
@@ -25,8 +26,7 @@ public class MigrateToOptions implements IOptionSource {
 		SubcommandUtil.addRepoLocationToOptions(options);
 		options.addOption(new PositionalOptionDefinition(OPT_SRC_WS, "source-workspace-name", 1, 1), //$NON-NLS-1$
 				"name of the pre configured source RTC workspace that could follow the stream to migrate.");
-		options.addOption(
-				new PositionalOptionDefinition(OPT_DEST_WS, "destination-workspace-name", 1, 1), //$NON-NLS-1$
+		options.addOption(new PositionalOptionDefinition(OPT_DEST_WS, "destination-workspace-name", 1, 1), //$NON-NLS-1$
 				"name of the pre configured RTC workspace that holds the current state of the migration and that follows the source-workspace-name.");
 
 		options.addOption(CommonOptions.OPT_DIRECTORY, CommonOptions.OPT_DIRECTORY_HELP);
@@ -36,6 +36,8 @@ public class MigrateToOptions implements IOptionSource {
 				"List only all tags that would be migrated but do not migrate them.");
 		options.addOption(new NamedOptionDefinition(OPT_RTC_IS_UPDATE_MIGRATION, "U", "update", 0),
 				"Update the content of an already migrated workspace.");
+		options.addOption(new NamedOptionDefinition(OPT_RTC_LOAD_ARGS, "A", "args", 1),
+				"Provide any extra load arguments");
 		return options;
 	}
 }

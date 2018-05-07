@@ -18,9 +18,9 @@ import com.ibm.team.rtc.cli.infrastructure.internal.parser.exceptions.Conflictin
 public class LoadCommandDelegate extends RtcCommandDelegate {
 
 	public LoadCommandDelegate(IScmClientConfiguration config, IChangeLogOutput output, String workspace,
-			String component, boolean force) {
+			String component, boolean force, String loadArgs) {
 		super(config, output, "load " + workspace + " force[" + force + "]");
-		setSubCommandLineByReflection(config, workspace, component, force);
+		setSubCommandLineByReflection(config, workspace, component, force, loadArgs);
 	}
 
 	@Override
@@ -34,7 +34,7 @@ public class LoadCommandDelegate extends RtcCommandDelegate {
 	}
 
 	private void setSubCommandLineByReflection(IScmClientConfiguration config, String workspace, String component,
-			boolean force) {
+			boolean force, String loadArgs) {
 		String uri = getSubCommandOption(config, CommonOptions.OPT_URI);
 		String username = getSubCommandOption(config, CommonOptions.OPT_USERNAME);
 		String password;
@@ -47,11 +47,11 @@ public class LoadCommandDelegate extends RtcCommandDelegate {
 				throw new RuntimeException("Unable to get password", e);
 			}
 		}
-		setSubCommandLine(config, generateCommandLine(uri, username, password, workspace, component, force));
+		setSubCommandLine(config, generateCommandLine(uri, username, password, workspace, component, force, loadArgs));
 	}
 
 	private ICommandLine generateCommandLine(String uri, String username, String password, String workspace,
-			String component, boolean force) {
+			String component, boolean force, String loadArgs) {
 		List<String> args = new ArrayList<String>();
 		args.add("-r");
 		args.add(uri);
@@ -62,6 +62,11 @@ public class LoadCommandDelegate extends RtcCommandDelegate {
 
 		if (force) {
 			args.add("--force");
+		}
+
+		if (loadArgs != null && !loadArgs.isEmpty()) {
+			// Generic sandbox load arguments
+			args.add(loadArgs);
 		}
 
 		args.add(workspace);

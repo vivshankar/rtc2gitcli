@@ -8,20 +8,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import to.rtc.cli.migrate.command.AcceptCommandDelegate;
-import to.rtc.cli.migrate.command.LoadCommandDelegate;
-import to.rtc.cli.migrate.util.Files;
-
 import com.ibm.team.filesystem.cli.core.Constants;
 import com.ibm.team.filesystem.cli.core.subcommands.IScmClientConfiguration;
 import com.ibm.team.filesystem.rcp.core.internal.changelog.IChangeLogOutput;
 import com.ibm.team.rtc.cli.infrastructure.internal.core.CLIClientException;
 
+import to.rtc.cli.migrate.command.AcceptCommandDelegate;
+import to.rtc.cli.migrate.command.LoadCommandDelegate;
+import to.rtc.cli.migrate.util.Files;
+
 public class RtcMigrator {
 
 	/**
-    *
-    */
+	*
+	*/
 	private static final int ACCEPTS_BEFORE_LOCAL_HISTORY_CLEAN = 1000;
 	protected final IChangeLogOutput output;
 	private final IScmClientConfiguration config;
@@ -29,15 +29,18 @@ public class RtcMigrator {
 	private final Migrator migrator;
 	private final Set<String> initiallyLoadedComponents;
 	private File sandboxDirectory;
+	private String loadArgs;
 
 	public RtcMigrator(IChangeLogOutput output, IScmClientConfiguration config, String workspace, Migrator migrator,
-			File sandboxDirectory, Collection<String> initiallyLoadedComponents, boolean isUpdateMigration) {
+			File sandboxDirectory, Collection<String> initiallyLoadedComponents, boolean isUpdateMigration,
+			String loadArgs) {
 		this.output = output;
 		this.config = config;
 		this.workspace = workspace;
 		this.migrator = migrator;
 		this.sandboxDirectory = sandboxDirectory;
 		this.initiallyLoadedComponents = new HashSet<String>(initiallyLoadedComponents);
+		this.loadArgs = loadArgs;
 	}
 
 	public void migrateTag(RtcTag tag) throws CLIClientException {
@@ -93,7 +96,7 @@ public class RtcMigrator {
 	long accept(RtcChangeSet changeSet) throws CLIClientException {
 		long startAccept = System.currentTimeMillis();
 		acceptAndLoadChangeSet(changeSet);
-		handleInitialLoad(changeSet);
+		handleInitialLoad(changeSet, this.loadArgs);
 		long acceptDuration = System.currentTimeMillis() - startAccept;
 		return acceptDuration;
 	}
@@ -115,7 +118,7 @@ public class RtcMigrator {
 		switch (result) {
 		case Constants.STATUS_OUT_OF_SYNC:
 			output.writeLine("Try loading of workspace again with force option");
-			result = new LoadCommandDelegate(config, output, workspace, null, true).run();
+			result = new LoadCommandDelegate(config, output, workspace, null, true, loadArgs).run();
 			break;
 		case Constants.STATUS_GAP:
 			output.writeLine("Retry accepting with --accept-missing-changesets");
@@ -129,10 +132,10 @@ public class RtcMigrator {
 		}
 	}
 
-	private void handleInitialLoad(RtcChangeSet changeSet) {
+	private void handleInitialLoad(RtcChangeSet changeSet, String loadArgs) {
 		if (!initiallyLoadedComponents.contains(changeSet.getComponent())) {
 			try {
-				new LoadCommandDelegate(config, output, workspace, changeSet.getComponent(), false).run();
+				new LoadCommandDelegate(config, output, workspace, changeSet.getComponent(), false, loadArgs).run();
 				initiallyLoadedComponents.add(changeSet.getComponent());
 			} catch (CLIClientException e) {
 				throw new RuntimeException("Not a valid sandbox. Please run [scm load " + workspace
