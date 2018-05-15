@@ -36,7 +36,7 @@ public class MigrateToOptions implements IOptionSource {
 				"List only all tags that would be migrated but do not migrate them.");
 		options.addOption(new NamedOptionDefinition(OPT_RTC_IS_UPDATE_MIGRATION, "U", "update", 0),
 				"Update the content of an already migrated workspace.");
-		options.addOption(new NamedOptionDefinition(OPT_RTC_LOAD_ARGS, "A", "args", 1),
+		options.addOption(new NamedOptionDefinition(OPT_RTC_LOAD_ARGS, "A", "args", 1, 3, " "),
 				"Provide any extra load arguments");
 		return options;
 	}

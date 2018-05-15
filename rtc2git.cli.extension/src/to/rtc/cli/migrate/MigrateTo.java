@@ -43,6 +43,7 @@ import com.ibm.team.rtc.cli.infrastructure.internal.core.CLIClientException;
 import com.ibm.team.rtc.cli.infrastructure.internal.core.ISubcommand;
 import com.ibm.team.rtc.cli.infrastructure.internal.core.LocalContext;
 import com.ibm.team.rtc.cli.infrastructure.internal.parser.ICommandLine;
+import com.ibm.team.rtc.cli.infrastructure.internal.parser.ICommandLineArgument;
 import com.ibm.team.scm.client.IWorkspaceConnection;
 import com.ibm.team.scm.client.IWorkspaceManager;
 import com.ibm.team.scm.client.SCMPlatform;
@@ -97,7 +98,15 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 
 			String loadArgs = "";
 			if (subargs.hasOption(MigrateToOptions.OPT_RTC_LOAD_ARGS)) {
-				loadArgs = subargs.getOptionValue(MigrateToOptions.OPT_RTC_LOAD_ARGS).getValue();
+				List<ICommandLineArgument> listLoadArgs = subargs.getOptionValues(MigrateToOptions.OPT_RTC_LOAD_ARGS);
+				for (ICommandLineArgument loadArg : listLoadArgs) {
+					String val = loadArg.getValue();
+					if (val == null || val.isEmpty())
+						continue;
+
+					loadArgs += val + " ";
+				}
+
 				output.writeLine("***** Using additional arguments for sandbox load: " + loadArgs + "*****");
 			}
 
